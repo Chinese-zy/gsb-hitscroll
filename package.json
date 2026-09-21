@@ -1,0 +1,1 @@
+{"name":"hitscroll","private":true,"type":"module","scripts":{"test":"node --test test/hit.test.js"}}
