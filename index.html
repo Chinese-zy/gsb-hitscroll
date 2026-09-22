@@ -4,10 +4,16 @@
 #outer{width:200px;height:120px;overflow:auto;border:1px solid #333}
 #inner{width:400px;height:300px;position:relative;transform:scale(1.25);transform-origin:0 0}
 .block{position:absolute;left:80px;top:100px;width:60px;height:40px;background:#4af}
+.block.hit{outline:3px solid #0a0}
+#overlay{position:absolute;left:0;top:0;width:400px;height:300px;pointer-events:none}
+.offset-line{stroke:#f80;stroke-width:1.5;vector-effect:non-scaling-stroke}
+.mark-bad{fill:#f33}
+.mark-good{fill:#0a0}
 </style></head>
 <body>
 <h1>点选</h1>
-<div id="outer"><div id="inner"><div class="block" id="target">块</div></div></div>
+<p>红点=旧算法落点,绿点=修正后落点,橙线=偏出去的那一截;命中时块描绿边。</p>
+<div id="outer"><div id="inner"><svg id="overlay"></svg><div class="block" id="target">块</div></div></div>
 <pre id="out"></pre>
 <script type="module" src="./hit.js"></script>
 </body></html>
