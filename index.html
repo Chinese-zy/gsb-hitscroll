@@ -4,10 +4,59 @@
 #outer{width:200px;height:120px;overflow:auto;border:1px solid #333}
 #inner{width:400px;height:300px;position:relative;transform:scale(1.25);transform-origin:0 0}
 .block{position:absolute;left:80px;top:100px;width:60px;height:40px;background:#4af}
+#marks{position:fixed;inset:0;pointer-events:none;z-index:99}
+#real,#ghost{position:absolute;width:12px;height:12px;border-radius:50%;display:none}
+#real{background:#e22;border:2px solid #fff;box-sizing:border-box}
+#ghost{background:#ffd400;border:2px solid #fff;box-sizing:border-box}
+#line{position:absolute;height:0;border-top:2px dashed #e22;transform-origin:0 0;display:none}
 </style></head>
 <body>
 <h1>点选</h1>
+<p>先点“滚动 40,30”，再点蓝色块：红点是真实点击位置，黄点是旧逻辑以为点到的位置，虚线就是偏出去的一截。</p>
+<button id="scrollBtn" type="button">滚动 40,30</button>
 <div id="outer"><div id="inner"><div class="block" id="target">块</div></div></div>
 <pre id="out"></pre>
+<div id="marks">
+  <div id="line"></div>
+  <div id="real" title="实际点击"></div>
+  <div id="ghost" title="旧逻辑误判点"></div>
+</div>
 <script type="module" src="./hit.js"></script>
+<script>
+const outerEl = document.getElementById("outer");
+const innerEl = document.getElementById("inner");
+const realMark = document.getElementById("real");
+const ghostMark = document.getElementById("ghost");
+const lineMark = document.getElementById("line");
+document.getElementById("scrollBtn").addEventListener("click", () => {
+  outerEl.scrollLeft = 40;
+  outerEl.scrollTop = 30;
+});
+outerEl.addEventListener("click", (e) => {
+  const or = outerEl.getBoundingClientRect();
+  const ir = innerEl.getBoundingClientRect();
+  const scale = ir.width / innerEl.offsetWidth;
+  // Old (buggy) logic probed layout coords (client minus outer origin),
+  // ignoring scroll and scale. Map that probed layout point back to where
+  // it actually sits on screen: that is the yellow ghost dot.
+  const probeX = e.clientX - or.left;
+  const probeY = e.clientY - or.top;
+  const ghostX = ir.left + probeX * scale;
+  const ghostY = ir.top + probeY * scale;
+  realMark.style.display = "block";
+  realMark.style.left = e.clientX - 6 + "px";
+  realMark.style.top = e.clientY - 6 + "px";
+  ghostMark.style.display = "block";
+  ghostMark.style.left = ghostX - 6 + "px";
+  ghostMark.style.top = ghostY - 6 + "px";
+  const dx = e.clientX - ghostX;
+  const dy = e.clientY - ghostY;
+  const len = Math.hypot(dx, dy);
+  lineMark.style.display = "block";
+  lineMark.style.left = ghostX + "px";
+  lineMark.style.top = ghostY + "px";
+  lineMark.style.width = len + "px";
+  lineMark.style.transform = "rotate(" + Math.atan2(dy, dx) + "rad)";
+});
+</script>
 </body></html>

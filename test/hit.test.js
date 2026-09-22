@@ -16,12 +16,47 @@ function el(spec) {
   };
 }
 
+// Geometry used below (matches index.html):
+// outer border-box left/top = 1/1; inner border-box left/top = 2/2;
+// block layout (80,100,60,40); inner scaled 1.25 from origin 0 0.
+// block client rect = inner origin (2,2) + layout*1.25 - scroll.
+// no scroll: rect (102,127,75,50); scroll 40,30: rect (62,97,75,50).
+
 test("after scroll hit still on block", () => {
   const block = el({ id: "target", offsetLeft: 80, offsetTop: 100, offsetWidth: 60, offsetHeight: 40,
-    rect: { left: 20, top: 10, width: 60, height: 40 } });
-  const inner = el({ rect: { left: 0, top: 0, width: 400, height: 300 }, blocks: [block] });
-  const outer = el({ rect: { left: 0, top: 0, width: 200, height: 120 }, scrollLeft: 40, scrollTop: 30 });
-  // click where block visually is after scroll
-  const got = hitTest(outer, inner, 20 + 10, 10 + 10);
-  assert.equal(got, "target");
+    rect: { left: 62, top: 97, width: 75, height: 50 } });
+  const inner = el({ rect: { left: 2, top: 2, width: 500, height: 375 }, blocks: [block] });
+  const outer = el({ rect: { left: 1, top: 1, width: 200, height: 120 }, scrollLeft: 40, scrollTop: 30 });
+  // fixed point where the block visually is after scroll
+  assert.equal(hitTest(outer, inner, 82, 117), "target");
+});
+
+test("no scroll: clicks that already worked keep working", () => {
+  const block = el({ id: "target", offsetLeft: 80, offsetTop: 100, offsetWidth: 60, offsetHeight: 40,
+    rect: { left: 102, top: 127, width: 75, height: 50 } });
+  const inner = el({ rect: { left: 2, top: 2, width: 500, height: 375 }, blocks: [block] });
+  const outer = el({ rect: { left: 1, top: 1, width: 200, height: 120 } });
+  assert.equal(hitTest(outer, inner, 103, 128), "target");   // near top-left
+  assert.equal(hitTest(outer, inner, 176, 176), "target");   // near bottom-right
+  assert.equal(hitTest(outer, inner, 140, 150), "target");   // middle
+});
+
+test("scale: hit uses scaled 75x50 rect, not layout 60x40", () => {
+  // (165,162) is inside scaled rect (102..177 x 127..177)
+  // but outside a naive unscaled box measured from the outer origin.
+  const block = el({ id: "target", offsetLeft: 80, offsetTop: 100, offsetWidth: 60, offsetHeight: 40,
+    rect: { left: 102, top: 127, width: 75, height: 50 } });
+  const inner = el({ rect: { left: 2, top: 2, width: 500, height: 375 }, blocks: [block] });
+  const outer = el({ rect: { left: 1, top: 1, width: 200, height: 120 } });
+  assert.equal(hitTest(outer, inner, 165, 162), "target");
+});
+
+test("after scroll: pre-scroll spot now misses", () => {
+  const block = el({ id: "target", offsetLeft: 80, offsetTop: 100, offsetWidth: 60, offsetHeight: 40,
+    rect: { left: 62, top: 97, width: 75, height: 50 } });
+  const inner = el({ rect: { left: 2, top: 2, width: 500, height: 375 }, blocks: [block] });
+  const outer = el({ rect: { left: 1, top: 1, width: 200, height: 120 }, scrollLeft: 40, scrollTop: 30 });
+  // (150,160) was inside the no-scroll rect (102..177 x 127..177);
+  // after scroll the rect ends at x=137, so the point now misses.
+  assert.equal(hitTest(outer, inner, 150, 160), null);
 });

@@ -1,27 +1,27 @@
-// BUG: ignores scroll offset; nested uses outer origin; scale not divided.
+// Hit test using each block's viewport rect: accounts for ancestor scroll,
+// nested offsets and CSS scale without any outer-origin arithmetic.
 export function hitTest(outer, inner, clientX, clientY) {
-  const or = outer.getBoundingClientRect();
-  // BUG: use client coords minus outer left/top only (pre-scroll position).
-  const x = clientX - or.left;
-  const y = clientY - or.top;
   const blocks = inner.querySelectorAll(".block");
   for (const b of blocks) {
-    const br = b.getBoundingClientRect();
-    // BUG: compare against layout without scroll/scale correction using outer origin.
-    if (x >= b.offsetLeft && x <= b.offsetLeft + b.offsetWidth &&
-        y >= b.offsetTop && y <= b.offsetTop + b.offsetHeight) {
+    // Compare in viewport (client) coordinates. getBoundingClientRect of a
+    // block already reflects every scroll of any ancestor, nested offsets,
+    // and any CSS scale, so no outer-origin math or manual divide is needed.
+    const r = b.getBoundingClientRect();
+    if (clientX >= r.left && clientX <= r.left + r.width &&
+        clientY >= r.top && clientY <= r.top + r.height) {
       return b.id || "block";
     }
-    void br;
   }
   return null;
 }
 
-const outer = document.getElementById("outer");
-const inner = document.getElementById("inner");
-const out = document.getElementById("out");
-if (outer) {
-  outer.addEventListener("click", (e) => {
-    out.textContent = String(hitTest(outer, inner, e.clientX, e.clientY));
-  });
+if (typeof document !== "undefined") {
+  const outer = document.getElementById("outer");
+  const inner = document.getElementById("inner");
+  const out = document.getElementById("out");
+  if (outer) {
+    outer.addEventListener("click", (e) => {
+      out.textContent = String(hitTest(outer, inner, e.clientX, e.clientY));
+    });
+  }
 }
